@@ -1,0 +1,22 @@
+# Project name
+PROJECT_NAME = "Repatch Wire"
+
+# Input files
+INPUT = repatchWire.C
+
+# Recursive search
+RECURSIVE = YES 
+
+# Extract all
+EXTRACT_ALL = YES
+
+# Graphviz settings
+HAVE_DOT = YES
+CALL_GRAPH = YES
+CALLER_GRAPH = YES
+CLASS_DIAGRAMS = YES
+
+# Output format
+GENERATE_HTML = YES
+GENERATE_LATEX = YES 
+

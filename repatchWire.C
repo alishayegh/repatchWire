@@ -1,3 +1,12 @@
+/**
+* @file repatchWire.C
+* @brief A test tool to re-patch an existing mesh based on some criteria;      
+* to be embeded in bekaert-v2.0.                                        
+
+* @author Maalik (ali@tensorfields.com)
+* @date 17 Sep 2024
+*/
+
 #include "fvCFD.H"
 #include "boundaryMesh.H"
 //#include "triSurface.H"
@@ -5,9 +14,16 @@
 
 using namespace Foam;
 	
+/**
+ * @brief Find if the two vector are aligned together in the specified tolerance
+ * @param a A vector
+ * @param b Another vector
+ * @param tol Tolerance
+ * @return True if a and b are aligned
+ */
 bool aligned (const vector& a,const vector& b,const double tol)
 {
-    //- Test block
+    // Test block
     scalar dotProduct = a & b;
     scalar magValue = mag(1 - dotProduct);
 
@@ -51,8 +67,8 @@ void createPatch(boundaryMesh& bMesh, string s1, string s2)
 int main(int argc, char* argv[])
 {
 	
-	bool debug = false;
-	bool debug2 = false;
+	bool debug = true;
+	bool debug2 = true;
 
 	argList args(argc, argv);
 	Time runTime
