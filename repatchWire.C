@@ -64,11 +64,14 @@ void createPatch(boundaryMesh& bMesh, string s1, string s2)
     Info << "patchType changed" << endl;
 }
 
+/**
+ * @brief Driver:
+ */
 int main(int argc, char* argv[])
 {
 	
-	bool debug = true;
-	bool debug2 = true;
+	bool debug = true;   
+	bool debug2 = true;  
 
 	argList args(argc, argv);
 	Time runTime
@@ -82,6 +85,13 @@ int main(int argc, char* argv[])
 	 );
 
     //polyMesh meshP
+	/**
+     * \anchor meshAnch 
+	 * Create an `fvMesh` object called `mesh` 
+	 *
+	 *     |
+	 *     V
+	 */
     fvMesh mesh
 	(
 	    IOobject
@@ -97,7 +107,12 @@ int main(int argc, char* argv[])
 
 	Info << "Mesh read" << endl;
 
-	//surfaceVectorField N
+	/**
+	 * @brief create a `surfaceVectorField` called `N`
+	 *
+	 *       |
+	 *       V
+	 */
     surfaceVectorField N// = mesh.Sf()/mesh.magSf();
 	(
 	    IOobject
@@ -109,48 +124,141 @@ int main(int argc, char* argv[])
 			IOobject::AUTO_WRITE
 		),
 		mesh,
+		/**
+		 * @brief Initialize `N` with **O**
+		 *
+		 *       |
+		 *       V
+		 */
 		dimensionedVector("zero", 
 		                   dimless, vector::zero)
 	);
 	Info << "N field created" << endl;
 
-	// Calculate normals on the new mesh
+	/**
+	 * @brief Calculate `N` (face normals) for \ref meshAnch "\c mesh"
+	 *
+	 *        |
+	 *        V
+	 */
     N = mesh.Sf()/mesh.magSf();
 	Info << "New normals calculated" << endl;
 
 
-	//- Create and set boundaryMesh 
+	/** 
+	 * @brief Create \c boundaryMesh object called \c bMesh
+	 *
+	 *       |
+	 *       V
+	 */
 
     boundaryMesh bMesh;
 	Info << "bMesh created" << endl;
 
+	/** 
+	 * @brief Init @c bMesh from @c mesh.
+	 *
+	 *        |
+     *        V
+	 */
 	bMesh.read(mesh);
 	Info << "boundaryMesh read" << endl;
 
-	//
-	// Fill patchIDs with old patchIDs
-	//
-    labelList patchIDs(bMesh.mesh().size() + bMesh.meshFace()[0], -1);             // Alright
+    /**
+	 * @brief Init a <b>\c labelList</b> object called \anchor patchIDs_anchor <b>\c patchIDs</b>
+	 * with all elements being invalid (-1).
+	 *
+	 * This list is meant to correspond each face with the correct patch. Init with the size of the sum of two sizes:
+	 */
+
+    labelList patchIDs(
+	                  /**
+	                  * - boundary size of <b>\c mesh</b>, 
+                      *
+					  * \note <b>\c bMesh.mesh().size()</b> 
+	                  * where <b>\c bMesh.mesh()</b> returns a <b>\c bMesh</b> object which includes all boundary data.
+					  * 
+				      * \note If the size of the boundary is, say, 10, this
+					  * value is therefore 10.
+	                  */
+	                      bMesh.mesh().size() 
+	                  /** 
+					  * - label of the first boundary face in the original \ref meshAnch "\c mesh". 
+
+					  * \note Due to the counting convention of C++, this
+					  * value is actually the number of the \c internalFace s
+                      * . So If the number of the \c internalFace s is 10,
+					  * this 
+					  * value is also 10 (the 11th face in the mesh).
+
+					  * \note In such a scenario, the original \ref meshAnch "\c
+					  * mesh" has had 20
+					  * faces, and \ref patchIDs_anchor "\c patchIDs" also
+					  * has 20 elements.
+
+					  * \note The size of the \ref patchIDs_anchor "\c
+					  * patchIDs" equals the number of faces in the \ref
+					  * meshAnch "\c mesh"
+					  */
+	                 + bMesh.meshFace()[0], -1); 
+					 /**
+					 \varbatim
+					 |
+					 V
+					 \endverbatim
+					 */
+
     //DynamicList<label> patchIDs;//(bMesh.mesh().size(), -1); // <- segfaults
 	//labelList copyPatchIDs(1,-1);
     //dynamicLabelList patchIDs(copyPatchIDs);//(bMesh.mesh().size(), -1);
 
+	/**
+	 * \brief Init a few <b>\c label</b>s, namely
+	 *
+	 * \anchor patchID_anchor*
+	 * Set patchID to 0
+	 *     |
+	 *     V
+	 */
 	label patchID = 0;
-	label nFaces = bMesh.meshFace()[0];
-    label face0 = bMesh.meshFace()[0];
+	label nInternalFaces = bMesh.meshFace()[0];
+	label nVisitedFaces = bMesh.meshFace()[0];
 	//label nFaces = 0;
 
+	/** 
+	 * Init \c patchIDs with old face-patch correspondence
+	 *
+	 * For each patch in the mesh (\ref meshAnch "\c mesh")
+	 *    |
+	 *    V
+     */
 	forAll(bMesh.patches(), patchI)
 	{
+		/**
+		 * For each face in the patch
+		 *     |
+		 *     V
+		 */
 	    forAll(bMesh.patches()[patchI], faceI)
-		{
-			if (patchI == patchID)
+		{ 
+			/**
+			 * Check if the outer loop counter (patch counter) is patchID (\ref patchID_anchor "\c patchID")
+			 *    |
+			 *    V
+			 */
+		    if (patchI == patchID)
 			{
-	            patchIDs[nFaces + faceI] = patchID; 
+				/**
+				 * The patchIDs elements corresponding to \c internalFaces remains invalid, and start changing patchIDs
+				 * for the face 0 of the patch 0 until completing patch 0, then face0 of patch 1 until completion, etc. 
+				 *     |
+				 *     V
+				 */
+	            patchIDs[nVisitedFaces + faceI] = patchID; 
 
 	            if (debug)
 				{
-				    Info << "patchIDs[" << nFaces + faceI << "] = "
+				    Info << "patchIDs[" << nInternalFaces + faceI << "] = "
 					                    << patchID << endl; 
 				}
 			}
@@ -161,8 +269,24 @@ int main(int argc, char* argv[])
 				<< "patchID = " << patchID << abort(FatalError);
 			}
 		}
-        nFaces = nFaces + bMesh.patches()[patchI].size();
-		patchID++;
+	    /** 
+		 * update \c visitedFaces
+		 * 
+		 * Now you have counted all faces in the patch \c patchI
+		 * \note \c visitedFaces is initially \c nInternalFaces 
+		 * 
+		 * \note \c size + \c index = \c index,
+		 * where size in this case is the number of faces, and index
+		 * is face index starting from 0
+		 *     |
+		 *     V
+		 */
+         nVisitedFaces = nVisitedFaces + bMesh.patches()[patchI].size();
+		 /** Increment patchID 
+		  *     |
+		  *     V
+		  */
+		 patchID++;
 	}
 
 	//-b. Init patchIDs; autoPatch
@@ -195,31 +319,27 @@ int main(int argc, char* argv[])
 	// Create newPatchIDs for mesh faces
 	//
 	
-	
-	    //-a. add and rename new patch: my way
-
+	/**
+	 * Add new patches with zero faces to \c bMesh
+	 */
 	Info << "patchIDs initialized" << endl;
 	    //- Add patchName for all faces facing positive Z direction
 		createPatch(bMesh, "symmetryPlaneZ1", "symmetryPlane");
 		createPatch(bMesh, "symmetryPlaneY1", "symmetryPlane");
 		createPatch(bMesh, "wireContact1", "patch");
 
-    label newPatchI = bMesh.patches().size()-1; //  last patchID is newPatchI
+	/**
+	 * newPatchI created: The index of the last patch in \c bMesh
+	 */
+    label newPatchI = bMesh.patches().size()-1; //  
 
         // Fill visited with all faces reachable from unsetFaceI.
+		/** Create \c boolList \c visited with the size of \c bMesh*/
         boolList visited(bMesh.mesh().size(), false); // <- If the second arg is not provided, elements will be assigned randomly, and anything but 0 is true.
-
-        //-a. my face marking
-        //vector zVector(0, 0, 1);
-        
-        //-a.2 my forAll, idea taken from autoPatch
-		//label count = 0;
 	
-	/*
 		double tol = 1e-5;
 		vector nZ (0, 0, -1);
 		vector nY (0, -1, 0);
-
 
         forAll(bMesh.mesh(), faceI)
         {
@@ -264,7 +384,7 @@ int main(int argc, char* argv[])
         	        //sFaces.append(faceI);
         	    	if(debug)
         	    	{
-		                Info <<faceI + face0 <<" " << "( "<< normal[0] << " " << normal[1] << " " << normal[2] << " )"  << endl;
+		                Info <<faceI + nInternalFaces <<" " << "( "<< normal[0] << " " << normal[1] << " " << normal[2] << " )"  << endl;
 		                //Info << "The normal " << normal[0] << " " << normal[1] << " " << normal[2] << " is aligned with " << nZ[0] << " " << nZ[1] << " " << nZ[2] << endl;
 						//Info << "mag(normal) = " << mag(normal) << endl;
                         //Info << "(mag(1 - (normal & vector(0,0,1))) < 1e-5) is true" << endl;
@@ -273,7 +393,7 @@ int main(int argc, char* argv[])
         
 	    	    	//-a.2 my-autoPatch way
 	    	    	//visited[faceI] = true;
-			    	patchIDs[faceI + face0] = newPatchI-2;
+			    	patchIDs[faceI + nInternalFaces] = newPatchI-2;
         
         	    	if(debug)
         	    	{
@@ -288,7 +408,7 @@ int main(int argc, char* argv[])
         	        //sFaces.append(faceI);
         	    	if(debug)
         	    	{
-		                Info <<faceI + face0 <<" " << "( "<< normal[0] << " " << normal[1] << " " << normal[2] << " )"  << endl;
+		                Info <<faceI + nInternalFaces <<" " << "( "<< normal[0] << " " << normal[1] << " " << normal[2] << " )"  << endl;
                         //Info << "(mag(1 - (normal & vector(0,0,1))) < 1e-5) is true" << endl;
 		                //Info << "The normal " << normal[0] << " " << normal[1] << " " << normal[2] << " is aligned with " << nY[0] << " " << nY[1] << " " << nY[2] << endl;
 						//Info << "mag(normal) = " << mag(normal) << endl;
@@ -296,7 +416,7 @@ int main(int argc, char* argv[])
         
 	    	    	//-a.2 my-autoPatch way
 	    	    	//visited[faceI] = true;
-			    	patchIDs[faceI + face0] = newPatchI-1;
+			    	patchIDs[faceI + nInternalFaces] = newPatchI-1;
         
         	    	if(debug)
         	    	{
@@ -316,7 +436,7 @@ int main(int argc, char* argv[])
         
 	    	    	//-a.2 my-autoPatch way
 	    	    	//visited[faceI] = true;
-			    	patchIDs[faceI + face0] = newPatchI;
+			    	patchIDs[faceI + nInternalFaces] = newPatchI;
         
         	    	if(debug)
         	    	{
@@ -338,7 +458,7 @@ int main(int argc, char* argv[])
 
 	if(debug)
 	{
-	    label ps = 0 + face0;
+	    label ps = 0 + nInternalFaces;
 	    //nFaces = 0;
 
 	    forAll(bMesh.patches(), patchI)
@@ -352,7 +472,7 @@ int main(int argc, char* argv[])
 	    }
 	}
 
-	*/
+	
 
 	//
 	// Create new patchList
@@ -375,7 +495,7 @@ int main(int argc, char* argv[])
 	        //bMesh.patches()[bMesh.patches().size()-1].size(),
 	        bMesh.patches()[patchI].size(), // new patch added with size zero
 	        //bMesh.patches()[bMesh.patches().size()-1].start(),
-	        bMesh.patches()[patchI].start()+face0,
+	        bMesh.patches()[patchI].start()+nInternalFaces,
 	        patchI,
 	        mesh.boundaryMesh()
 		);
@@ -386,7 +506,7 @@ int main(int argc, char* argv[])
 	            Info << "patchName = " << bMesh.patches()[patchI].name() << " "; 
 	            Info << "patchSize = " << bMesh.patches()[patchI].size() << " ";// new patch added with size zero
 	            //bMesh.patches()[bMesh.patches().size()-1].start(),
-	            Info << "patchStart = " << bMesh.patches()[patchI].start()+face0 << " ";
+	            Info << "patchStart = " << bMesh.patches()[patchI].start()+nInternalFaces << " ";
 	            Info << "patchIndex = " << patchI << endl;
 	            //mesh.boundaryMesh()
 		    //);
@@ -435,17 +555,17 @@ int main(int argc, char* argv[])
 	    Info << "patchIDs.size() before repatch is " << patchIDs.size() << endl;
 	}
 
-    for(label faceI=face0; faceI < patchIDs.size(); ++faceI)
+    for(label faceI=nInternalFaces; faceI < patchIDs.size(); ++faceI)
     //forAll(patchIDs, faceI)
     {
 
-        label meshFaceI = meshFace[faceI-face0];
+        label meshFaceI = meshFace[faceI-nInternalFaces];
         //label meshFaceI = meshFace[faceI];
 
 		if(debug2)
 		{
 			Info << "********************************************************" << endl;
-		    Info << "meshFaceI = " << meshFace[faceI-face0] << endl;
+		    Info << "meshFaceI = " << meshFace[faceI-nInternalFaces] << endl;
 		    //Info << "meshFaceI = " << meshFace[faceI] << endl;
 		}
 

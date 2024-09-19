@@ -3,12 +3,14 @@ PROJECT_NAME = "Repatch Wire"
 
 # Input files
 INPUT = repatchWire.C
+OUTPUT_DIRECTORY = ./docs
 
 # Recursive search
 RECURSIVE = YES 
 
 # Extract all
 EXTRACT_ALL = YES
+EXTRACT_VARIABLES = YES
 
 # Graphviz settings
 HAVE_DOT = YES
@@ -19,4 +21,14 @@ CLASS_DIAGRAMS = YES
 # Output format
 GENERATE_HTML = YES
 GENERATE_LATEX = YES 
+
+# Markdown
+MARKDOWN_SUPPORT = YES
+
+# Interactive links
+AUTOLINK_SUPPORT = YES
+
+# Optional: Enable source browser (this creates links to the source code).
+SOURCE_BROWSER = YES
+INLINE_SOURCES = YES
 
