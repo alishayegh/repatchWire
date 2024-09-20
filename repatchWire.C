@@ -25,7 +25,7 @@ using namespace Foam;
 
 typedef bMesh bMeshType;
 
-class createPatch//(boundaryMesh& bMesh, string s1, string s2)
+class createPatch
 {
     word patchName_;
     word patchType_;
@@ -140,8 +140,10 @@ class criterion: public boundaryPatch
 int main(int argc, char* argv[])
 {
 	
-	bool debug = true;   
-	bool debug2 = true;  
+	bool debug = false;   
+	bool debug2 = false;  
+	/** a brief debug switch I just need now */
+	bool debug3 = true;  
 
 	argList args(argc, argv);
 	Time runTime
@@ -392,6 +394,10 @@ int main(int argc, char* argv[])
 		const PtrList<boundaryPatch> patches = bMesh.patches();
 
 		/** Loop over boundary faces of *wireContact* to correspond them to an appropriate new patch based on their normal direction */
+		if(debug3)
+		{
+		    int visitedNegZFaces=0;
+		}
         forAll(boundaryFaces, faceI)
         {
 		    if // Only split wireContact
@@ -426,6 +432,10 @@ int main(int argc, char* argv[])
 			    		//Info << "visited[" << faceI << "] = " << visited[faceI] << endl;
         	    	    //Info << "patchIDs[" << visitedFaces + faceI<< "] = " << newPatchID << endl;
         	    	}
+					if(debug3)
+					{
+                        ++visitedNegZFaces;
+					}
 			    }
 				/*
 
@@ -478,6 +488,11 @@ int main(int argc, char* argv[])
 			    //    Info << "patchIDs.size() = " << patchIDs.size() << endl;
 			    //}
 		    }
+			if(debug3)
+			{
+                Info << "visitedNegZFaces = " << visitedNegZFaces << endl;
+			}
+			
         }
         //Info << "patchIDs.size() outside the loop = " << patchIDs.size() << endl;
 
