@@ -8,6 +8,7 @@
 */
 
 #include "fvCFD.H"
+#include "bMesh.H"
 #include "boundaryMesh.H"
 //#include "triSurface.H"
 #include "repatchPolyTopoChanger.H"
@@ -21,48 +22,117 @@ using namespace Foam;
  * @param tol Tolerance
  * @return True if a and b are aligned
  */
-bool aligned (const vector& a,const vector& b,const double tol)
+
+typedef bMesh bMeshType;
+
+class createPatch//(boundaryMesh& bMesh, string s1, string s2)
 {
-    // Test block
-    scalar dotProduct = a & b;
-    scalar magValue = mag(1 - dotProduct);
+    word patchName_;
+    word patchType_;
+    int patchID_;
+	vector criterion_;
 
-	//if(Foam::debug)
-	//{
-		//Info << "The normal " << a[0] << " " << a[1] << " " << a[2] << " is aligned with " << b[0] << " " << b[1] << " " << b[2] << endl;
-		//Info << "a&b = " << dotProduct << endl;
-	    //Info << "mag = "<< magValue << ", tol = " << tol << endl;
-	//}
-
-	//Info << "a = " << a[0] << " " << a[1] << " " << a[2] << endl;
-	//Info << "b = " << b[0] << " " << b[1] << " " << b[2] << endl;
-
-	//Info << "mag(mag(a[0]/(mag(a) + VSMALL)) = " << mag(mag(a[0]/(mag(a) + VSMALL))) << endl;
-	//bool xOk = mag(mag(a[0]/(mag(a) + VSMALL)) - mag(b[0]/(mag(b) + VSMALL))) < tol;
-	//Info << "mag(mag(a[1]/(mag(a) + VSMALL)) = " << mag(mag(a[1]/(mag(a) + VSMALL))) << endl;
-	//bool yOk = mag(mag(a[1]/(mag(a) + VSMALL)) - mag(b[1]/(mag(b) + VSMALL))) < tol;
-	//Info << "mag(mag(a[2]/(mag(a) + VSMALL)) = " << mag(mag(a[2]/(mag(a) + VSMALL))) << endl;
-	//bool zOk = mag(mag(a[2]/(mag(a) + VSMALL)) - mag(b[2]/(mag(b) + VSMALL))) < tol;
-
-	//bool xOk = mag(mag(a) - mag(b)) < tol;
-	//bool yOk(true);
-	//bool zOk(true);
+    bool aligned (const vector& a,const vector& b,const double tol)
+    {
+        // Test block
+        scalar dotProduct = a & b;
+        scalar magValue = mag(1 - dotProduct);
     
-    return (magValue < tol);
-    //return (xOk && yOk && zOk);
-}
+    	//if(Foam::debug)
+    	//{
+    		//Info << "The normal " << a[0] << " " << a[1] << " " << a[2] << " is aligned with " << b[0] << " " << b[1] << " " << b[2] << endl;
+    		//Info << "a&b = " << dotProduct << endl;
+    	    //Info << "mag = "<< magValue << ", tol = " << tol << endl;
+    	//}
+    
+    	//Info << "a = " << a[0] << " " << a[1] << " " << a[2] << endl;
+    	//Info << "b = " << b[0] << " " << b[1] << " " << b[2] << endl;
+    
+    	//Info << "mag(mag(a[0]/(mag(a) + VSMALL)) = " << mag(mag(a[0]/(mag(a) + VSMALL))) << endl;
+    	//bool xOk = mag(mag(a[0]/(mag(a) + VSMALL)) - mag(b[0]/(mag(b) + VSMALL))) < tol;
+    	//Info << "mag(mag(a[1]/(mag(a) + VSMALL)) = " << mag(mag(a[1]/(mag(a) + VSMALL))) << endl;
+    	//bool yOk = mag(mag(a[1]/(mag(a) + VSMALL)) - mag(b[1]/(mag(b) + VSMALL))) < tol;
+    	//Info << "mag(mag(a[2]/(mag(a) + VSMALL)) = " << mag(mag(a[2]/(mag(a) + VSMALL))) << endl;
+    	//bool zOk = mag(mag(a[2]/(mag(a) + VSMALL)) - mag(b[2]/(mag(b) + VSMALL))) < tol;
+    
+    	//bool xOk = mag(mag(a) - mag(b)) < tol;
+    	//bool yOk(true);
+    	//bool zOk(true);
+        
+        return (magValue < tol);
+        //return (xOk && yOk && zOk);
+    }
 
-void createPatch(boundaryMesh& bMesh, string s1, string s2)
+	public:
+        /** Constructors */
+        createPatch
+        (
+        	boundaryMesh& bMesh,
+            const word& s1,
+        	const word& s2,
+        	const vector& v = vector(0, 0, 0)
+        ):
+        patchName_(s1),
+        patchType_(s2),
+        patchID_(bMesh.patches().size()),
+        criterion_(v)
+        {
+            bMesh.addPatch(patchName_);
+            bMesh.changePatchType(patchName_, patchType_);
+        }
+		
+		/*
+        createPatch
+        (
+        	boundaryMesh& bMesh,
+            const word& s1,
+        	const word& s2,
+        	const vector& v = vector(0, 0, 0)
+        ):
+        createPatch
+        (
+        	const boundaryMesh& bMesh,
+            const word& s1,
+        	const word& s2
+        ),
+        criterion_(v)
+        {}
+		*/
+        
+        int patchID()
+        {
+            return patchID_;
+        }
+        
+        bool criterion(const vector& v, const double tol)
+        {
+            return aligned(criterion_, v, tol);
+        }
+};
+
+/** Define criterion class */
+/*
+class criterion: public boundaryPatch 
 {
-    word patchName(s1);
-    Info << "patchName created" << endl;
-    
-    bMesh.addPatch(patchName);
-    Info << "patch added" << endl;
-    
-    bMesh.changePatchType(patchName, s2);
-    Info << "patchType changed" << endl;
-}
+	private:
+		bool holds_;
+	    int newPatchID_;
+		boundaryPatch& bp_;
+
+    public:
+		inline bool holds()
+		{return holds_;}
+
+	    inline int newPatchID()
+		{return newPatchID_;}
+
+	    criterion(boundaryPatch& bp, int newPatchID, bool holds=false):
+		holds_(holds),
+		newPatchID_(newPatchID),
+		boundaryPatch_(bp)
+		{}
+};
+*/
 
 /**
  * @brief Driver:
@@ -288,112 +358,67 @@ int main(int argc, char* argv[])
 		  */
 		 patchID++;
 	}
-
-	//-b. Init patchIDs; autoPatch
 	//DynamicList<label, 1> patchIDs(bMesh.mesh());
 	
-	//patchIDsNew[bMesh.mesh().size()-1] = -1;
-    //labelList patchIDsNew(bMesh.mesh().size(), -1);
-
-    //
-    // Fill patchIDs with values for every face by floodfilling without
-    // crossing feature edge.
-    //
-
-    // Current patch number.
-
-	/*
-	//-b. Find faces for the new patch: autoPatch way
-
-    // Find first unset face.
-    label unsetFaceI = findIndex(patchIDsNew, -1);
-
-    if (unsetFaceI == -1)
-    {}
-
-	else
-	{
-	*/
-
 	//
 	// Create newPatchIDs for mesh faces
 	//
+
+	/**
+	 * newPatchI created: The index of the last patch in \c bMesh
+	 */
+    label newPatchI = bMesh.patches().size()-1; //  
 	
 	/**
 	 * Add new patches with zero faces to \c bMesh
 	 */
 	Info << "patchIDs initialized" << endl;
 	    //- Add patchName for all faces facing positive Z direction
-		createPatch(bMesh, "symmetryPlaneZ1", "symmetryPlane");
-		createPatch(bMesh, "symmetryPlaneY1", "symmetryPlane");
-		createPatch(bMesh, "wireContact1", "patch");
-
-	/**
-	 * newPatchI created: The index of the last patch in \c bMesh
-	 */
-    label newPatchI = bMesh.patches().size()-1; //  
+		createPatch symmetryPlaneZ1(bMesh, word("symmetryPlaneZ1"), word("symmetryPlane"), vector(0, 0, -1));
+		createPatch symmetryPlaneY1(bMesh, word("symmetryPlaneY1"), word("symmetryPlane"), vector(0, -1, 0));
+		createPatch    wireContact1(bMesh, word("wireContact1"),    word("patch"));
 
         // Fill visited with all faces reachable from unsetFaceI.
 		/** Create \c boolList \c visited with the size of \c bMesh*/
         boolList visited(bMesh.mesh().size(), false); // <- If the second arg is not provided, elements will be assigned randomly, and anything but 0 is true.
 	
-		double tol = 1e-5;
-		vector nZ (0, 0, -1);
-		vector nY (0, -1, 0);
+		const double tol = 1e-5;
 
-        forAll(bMesh.mesh(), faceI)
+		/**
+		 * Create the list of the boundary faces 
+		 */
+		const bMeshType& boundaryFaces = bMesh.mesh();
+		const pointField& meshPoints = mesh.points();
+		const PtrList<boundaryPatch> patches = bMesh.patches();
+
+		/** Loop over boundary faces of *wireContact* to correspond them to an appropriate new patch based on their normal direction */
+        forAll(boundaryFaces, faceI)
         {
 		    if // Only split wireContact
 			(
-			    mesh.boundaryMesh()
+			    patches
 				[
+					/** return patch index */
 				    bMesh.whichPatch(faceI)
 				].name() == "wireContact"
 			)
 			{
+				/** Start criterion;
+				 * 
+				 * Criterion can be a self-contained, general class..?
+				 */
+
         	    //- Calculate face normal
 
-	    	    //-a.2 my-autoPatch way
-				face f = bMesh.mesh()[faceI];//.reverseFace();
-        	    vector normal = f.normal
-        	    (
-        	        mesh.points()
-        	    );
+				face f = boundaryFaces[faceI];//.reverseFace();
+        	    vector normal = f.normal(meshPoints);
         
         	    normal /= mag(normal) + VSMALL;
 
-				if(debug)
-				{
-        	        //Info << "normal = " << normal[0] << " " << normal[1] << " " << normal[2] << endl;
-        	        //Info << "mag(normal) = " << mag(normal) << endl;
-				}
-
-
-				//N[face0 + faceI] = normal;
-        	    //
-        	    // Assign patchIDs
-        	    //
-        
-        	    if(debug)
-        	    {
-                    //Info << "N set " << endl;
-                }
-
-		        if(aligned(normal, nZ, tol)) // newPatchI-2
+		        if(symmetryPlaneZ1.criterion(normal, tol))
 			    {
-        	        //sFaces.append(faceI);
-        	    	if(debug)
-        	    	{
-		                Info <<faceI + nInternalFaces <<" " << "( "<< normal[0] << " " << normal[1] << " " << normal[2] << " )"  << endl;
-		                //Info << "The normal " << normal[0] << " " << normal[1] << " " << normal[2] << " is aligned with " << nZ[0] << " " << nZ[1] << " " << nZ[2] << endl;
-						//Info << "mag(normal) = " << mag(normal) << endl;
-                        //Info << "(mag(1 - (normal & vector(0,0,1))) < 1e-5) is true" << endl;
-                        //Info << "ma" << endl;
-        	    	}
-        
-	    	    	//-a.2 my-autoPatch way
 	    	    	//visited[faceI] = true;
-			    	patchIDs[faceI + nInternalFaces] = newPatchI-2;
+			    	patchIDs[faceI + nInternalFaces] = symmetryPlaneZ1.patchID();
         
         	    	if(debug)
         	    	{
@@ -402,6 +427,7 @@ int main(int argc, char* argv[])
         	    	    //Info << "patchIDs[" << visitedFaces + faceI<< "] = " << newPatchID << endl;
         	    	}
 			    }
+				/*
 
 		        else if(aligned(normal, nY, tol)) // newPatchI-1
 			    {
@@ -416,7 +442,7 @@ int main(int argc, char* argv[])
         
 	    	    	//-a.2 my-autoPatch way
 	    	    	//visited[faceI] = true;
-			    	patchIDs[faceI + nInternalFaces] = newPatchI-1;
+			    	patchIDs[faceI + nInternalFaces] = patchI_symmY;
         
         	    	if(debug)
         	    	{
@@ -436,7 +462,7 @@ int main(int argc, char* argv[])
         
 	    	    	//-a.2 my-autoPatch way
 	    	    	//visited[faceI] = true;
-			    	patchIDs[faceI + nInternalFaces] = newPatchI;
+			    	patchIDs[faceI + nInternalFaces] = patchI_wireContact;
         
         	    	if(debug)
         	    	{
@@ -445,6 +471,7 @@ int main(int argc, char* argv[])
         	    	    //Info << "patchIDs[" << visitedFaces + faceI<< "] = " << newPatchID << endl;
         	    	}
 			    }
+				*/
 
 		        //if(count == bMesh.mesh().size())
 			    //{
@@ -458,6 +485,7 @@ int main(int argc, char* argv[])
 
 	if(debug)
 	{
+	/*
 	    label ps = 0 + nInternalFaces;
 	    //nFaces = 0;
 
@@ -470,6 +498,7 @@ int main(int argc, char* argv[])
 	    	}
 	    	//nFaces = nFaces + bMesh.patches()[patchI].size();
 	    }
+	*/
 	}
 
 	
@@ -501,6 +530,7 @@ int main(int argc, char* argv[])
 		);
         if (debug)
 		{
+		/*
 	        //newPatchPtrList[patchI] = new polyPatch
 		    //(
 	            Info << "patchName = " << bMesh.patches()[patchI].name() << " "; 
@@ -510,6 +540,7 @@ int main(int argc, char* argv[])
 	            Info << "patchIndex = " << patchI << endl;
 	            //mesh.boundaryMesh()
 		    //);
+		*/
 		}
 	}
 
@@ -517,20 +548,24 @@ int main(int argc, char* argv[])
 
 	if(debug2)
 	{
+	/*
 	    Info << "bMesh.meshFace()" << endl;
 	    forAll(bMesh.meshFace(), I)
 	    {
 	        Info << "bMesh.meshFace()[" << I << "] = " << bMesh.meshFace()[I] << endl;
 	    	//Info << bMesh.meshFace() << endl;
 	    }
+	*/
 	}
 		
 	if(debug)
 	{
+	/*
 	    forAll(mesh.boundaryMesh(), patchI)
 	    {
 	        Info << "patch "<< mesh.boundaryMesh()[patchI].name() << " had " << mesh.boundaryMesh()[patchI].size()<< " faces" << endl;
 	    }
+	*/
 	}
 
 	//
