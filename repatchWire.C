@@ -30,7 +30,7 @@ class createPatch
     word patchName_;
     word patchType_;
     int patchID_;
-	vector criterion_;
+	vector normal_;
 
     bool aligned (const vector& a,const vector& b,const double tol)
     {
@@ -75,64 +75,22 @@ class createPatch
         patchName_(s1),
         patchType_(s2),
         patchID_(bMesh.patches().size()),
-        criterion_(v)
+        normal_(v)
         {
             bMesh.addPatch(patchName_);
             bMesh.changePatchType(patchName_, patchType_);
         }
-		
-		/*
-        createPatch
-        (
-        	boundaryMesh& bMesh,
-            const word& s1,
-        	const word& s2,
-        	const vector& v = vector(0, 0, 0)
-        ):
-        createPatch
-        (
-        	const boundaryMesh& bMesh,
-            const word& s1,
-        	const word& s2
-        ),
-        criterion_(v)
-        {}
-		*/
         
         int patchID()
         {
             return patchID_;
         }
         
-        bool criterion(const vector& v, const double tol)
+        bool normal_aligns(const vector& v, const double tol)
         {
-            return aligned(criterion_, v, tol);
+            return aligned(normal_, v, tol);
         }
 };
-
-/** Define criterion class */
-/*
-class criterion: public boundaryPatch 
-{
-	private:
-		bool holds_;
-	    int newPatchID_;
-		boundaryPatch& bp_;
-
-    public:
-		inline bool holds()
-		{return holds_;}
-
-	    inline int newPatchID()
-		{return newPatchID_;}
-
-	    criterion(boundaryPatch& bp, int newPatchID, bool holds=false):
-		holds_(holds),
-		newPatchID_(newPatchID),
-		boundaryPatch_(bp)
-		{}
-};
-*/
 
 /**
  * @brief Driver:
@@ -394,10 +352,7 @@ int main(int argc, char* argv[])
 		const PtrList<boundaryPatch> patches = bMesh.patches();
 
 		/** Loop over boundary faces of *wireContact* to correspond them to an appropriate new patch based on their normal direction */
-		if(debug3)
-		{
-		    int visitedNegZFaces=0;
-		}
+		int visitedNegZFaces=0;
         forAll(boundaryFaces, faceI)
         {
 		    if // Only split wireContact
@@ -421,7 +376,7 @@ int main(int argc, char* argv[])
         
         	    normal /= mag(normal) + VSMALL;
 
-		        if(symmetryPlaneZ1.criterion(normal, tol))
+		        if(symmetryPlaneZ1.normal_aligns(normal, tol))
 			    {
 	    	    	//visited[faceI] = true;
 			    	patchIDs[faceI + nInternalFaces] = symmetryPlaneZ1.patchID();
