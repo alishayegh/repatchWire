@@ -143,7 +143,19 @@ int main(int argc, char* argv[])
 	 *       |
 	 *       V
 	 */
-    surfaceVectorField N// = mesh.Sf()/mesh.magSf();
+	Info << "mesh.size() = " << mesh.size() << endl;
+
+	//surfaceVectorField Sf = mesh.boundaryMesh().mesh().Sf().boundaryField();
+	//Info << "Sf.size() = " << Sf.size() << endl;
+
+	surfaceScalarField magSf =  mesh.magSf();
+	Info << "magSf.size() = " << magSf.size() << endl;
+
+	//surfaceScalarField nf =  mesh.boundaryMesh().nf();
+	//Info << "nf.size() = " << nf.size() << endl;
+
+	surfaceVectorField N = mesh.Sf()/mesh.magSf();
+	/*
 	(
 	    IOobject
 		(
@@ -154,26 +166,23 @@ int main(int argc, char* argv[])
 			IOobject::AUTO_WRITE
 		),
 		mesh,
-		/**
-		 * @brief Initialize `N` with **O**
-		 *
-		 *       |
-		 *       V
-		 */
 		dimensionedVector("zero", 
 		                   dimless, vector::zero)
 	);
+	*/
+	
 	Info << "N field created" << endl;
 
-	/**
-	 * @brief Calculate `N` (face normals) for \ref meshAnch "\c mesh"
-	 *
-	 *        |
-	 *        V
-	 */
-    N = mesh.Sf()/mesh.magSf();
-	Info << "New normals calculated" << endl;
+	if(debug3)
+	{
+	/*
+		Info << "N.size() = " << N.size() << endl;
+	    Info << "Sample N element, N[0] = " << N[0] << endl;
+	    Info << "Sample N element, N[0][0] = " << N[0][0] << endl;
+	*/
+	}
 
+	Info << "New normals calculated" << endl;
 
 	/** 
 	 * @brief Create \c boundaryMesh object called \c bMesh
@@ -359,7 +368,10 @@ int main(int argc, char* argv[])
 
 		/** Loop over boundary faces of *wireContact* to correspond them to an appropriate new patch based on their normal direction */
 		int visitedNegZFaces=0;
-        
+		//int dummy = 0;
+		const fvBoundaryMesh& fvPatches = mesh.boundary();
+		int patchCount = 0;
+
         forAll(boundaryFaces, faceI)
         {
 		    if // Only split wireContact
@@ -394,13 +406,27 @@ int main(int argc, char* argv[])
 			    		//Info << "visited[" << faceI << "] = " << visited[faceI] << endl;
         	    	    //Info << "patchIDs[" << visitedFaces + faceI<< "] = " << newPatchID << endl;
         	    	}
+
 					if(debug3)
 					{
                         ++visitedNegZFaces;
+						Info << "normal:" << endl;
 						Info << normal[0] << " " << normal[1] << " " << normal[2] << endl;
-						Info << N[faceI + nInternalFaces][0] << " " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
+						//Info << N[faceI + nInternalFaces] << endl;//" " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
+						//Info << N[faceI + nInternalFaces][0] << " " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
 					}
+
+			        if(debug3)
+			        {
+                        //Info << "visitedNegZFaces = " << visitedNegZFaces << endl;
+			            //Info << "faceI + nInternalFaces = " << " " << faceI + nInternalFaces << endl;
+                        int patchCount = bMesh.whichPatch(faceI);
+			        	Info << "fvPatches[patchCount].nf() = " << fvPatches[patchCount].nf() << endl;//" " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
+			        	//Info << "fvPatches[patchCount].nf()() = " << fvPatches[patchCount].nf()() << endl;//" " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
+			        	//Info << fvPatches[patchCount].nf()()[faceI][0] << " " <<fvPatches[patchCount].nf()()[faceI][1] << " "<< fvPatches[patchCount].nf()()[faceI][2] << endl;//" " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
+			        }
 			    }
+
 				/*
 
 		        else if(aligned(normal, nY, tol)) // newPatchI-1
@@ -452,10 +478,6 @@ int main(int argc, char* argv[])
 			    //    Info << "patchIDs.size() = " << patchIDs.size() << endl;
 			    //}
 		    }
-			if(debug3)
-			{
-                //Info << "visitedNegZFaces = " << visitedNegZFaces << endl;
-			}
 			
         }
         //Info << "patchIDs.size() outside the loop = " << patchIDs.size() << endl;
