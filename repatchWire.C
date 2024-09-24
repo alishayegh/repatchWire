@@ -348,11 +348,18 @@ int main(int argc, char* argv[])
 		 * Create the list of the boundary faces 
 		 */
 		const bMeshType& boundaryFaces = bMesh.mesh();
+
+		if(debug3)
+		{
+		    Info << "boundaryFaces.size() = " << boundaryFaces.size() << endl;
+		}
+
 		const pointField& meshPoints = mesh.points();
 		const PtrList<boundaryPatch> patches = bMesh.patches();
 
 		/** Loop over boundary faces of *wireContact* to correspond them to an appropriate new patch based on their normal direction */
 		int visitedNegZFaces=0;
+        
         forAll(boundaryFaces, faceI)
         {
 		    if // Only split wireContact
@@ -390,6 +397,8 @@ int main(int argc, char* argv[])
 					if(debug3)
 					{
                         ++visitedNegZFaces;
+						Info << normal[0] << " " << normal[1] << " " << normal[2] << endl;
+						Info << N[faceI + nInternalFaces][0] << " " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
 					}
 			    }
 				/*
@@ -445,7 +454,7 @@ int main(int argc, char* argv[])
 		    }
 			if(debug3)
 			{
-                Info << "visitedNegZFaces = " << visitedNegZFaces << endl;
+                //Info << "visitedNegZFaces = " << visitedNegZFaces << endl;
 			}
 			
         }
