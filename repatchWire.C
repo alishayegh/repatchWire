@@ -402,8 +402,8 @@ int main(int argc, char* argv[])
 
 				if(debug3)
 				{
-					Info << "normals of " << desiredPatchName << endl;
-				    Info << normals << endl;
+					//Info << "normals of " << desiredPatchName << endl;
+				    //Info << normals << endl;
 				}
 				break;
 			}
