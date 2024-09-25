@@ -336,7 +336,7 @@ int main(int argc, char* argv[])
 	/**
 	 * newPatchI created: The index of the last patch in \c bMesh
 	 */
-    label newPatchI = bMesh.patches().size()-1; //  
+    //label newPatchI = bMesh.patches().size()-1; //  
 	
 	/**
 	 * Add new patches with zero faces to \c bMesh
@@ -363,37 +363,93 @@ int main(int argc, char* argv[])
 		    Info << "boundaryFaces.size() = " << boundaryFaces.size() << endl;
 		}
 
-		const pointField& meshPoints = mesh.points();
+		//const pointField& meshPoints = mesh.points();
+
 		const PtrList<boundaryPatch> patches = bMesh.patches();
 
 		/** Loop over boundary faces of *wireContact* to correspond them to an appropriate new patch based on their normal direction */
-		int visitedNegZFaces=0;
-		//int dummy = 0;
+		//int visitedNegZFaces=0;
+
 		const fvBoundaryMesh& fvPatches = mesh.boundary();
-		int patchCount = 0;
+
+
+		/**
+		 * Calculate normals only for faces of the patch that is meant to be repatched
+		 */
+
+		/**
+		 * Initialize \c normals to circumvent declaration error.
+		 */
+
+        vectorField normals;// = fvPatches[patchID].nf()();
+
+		/**
+		 * Find the relevant normals (those of the desired patch faces)
+		 */
+
+		word desiredPatchName("wireContact");
 
         forAll(boundaryFaces, faceI)
         {
+			patchID = bMesh.whichPatch(faceI);
+
 		    if // Only split wireContact
 			(
-			    patches
-				[
-					/** return patch index */
-				    bMesh.whichPatch(faceI)
-				].name() == "wireContact"
+			    patches[patchID].name() == desiredPatchName
+			)
+			{
+			    normals = fvPatches[patchID].nf()();
+
+				if(debug3)
+				{
+					Info << "normals of " << desiredPatchName << endl;
+				    Info << normals << endl;
+				}
+				break;
+			}
+		}
+
+		/**
+		 * \c normals are counted from the first face of the desired patch, \c sweptFaces helps finding them.
+		 */
+		int sweptFaces = 0;
+
+        forAll(boundaryFaces, faceI)
+        {
+			patchID = bMesh.whichPatch(faceI);
+
+		    if // Only split wireContact
+			(
+			    patches[patchID].name() == desiredPatchName
 			)
 			{
 				/** Start criterion;
 				 * 
-				 * Criterion can be a self-contained, general class..?
+				 *  Criterion can be a self-contained, general class..?
 				 */
 
+				/** Previous face normal calculation was erroneous */
+				/*
         	    //- Calculate face normal
 
 				face f = boundaryFaces[faceI];//.reverseFace();
+
         	    vector normal = f.normal(meshPoints);
         
         	    normal /= mag(normal) + VSMALL;
+				*/
+
+				/** Alternative face normal calculation */
+			    vector& normal = normals[faceI - sweptFaces];
+
+				if(debug3)
+				{
+                    //++visitedNegZFaces;
+					//Info << "normal:" << endl;
+					//Info << normal[0] << " " << normal[1] << " " << normal[2] << endl;
+					//Info << N[faceI + nInternalFaces] << endl;//" " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
+					//Info << N[faceI + nInternalFaces][0] << " " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
+				}
 
 		        if(symmetryPlaneZ1.normal_aligns(normal, tol))
 			    {
@@ -407,21 +463,13 @@ int main(int argc, char* argv[])
         	    	    //Info << "patchIDs[" << visitedFaces + faceI<< "] = " << newPatchID << endl;
         	    	}
 
-					if(debug3)
-					{
-                        ++visitedNegZFaces;
-						Info << "normal:" << endl;
-						Info << normal[0] << " " << normal[1] << " " << normal[2] << endl;
-						//Info << N[faceI + nInternalFaces] << endl;//" " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
-						//Info << N[faceI + nInternalFaces][0] << " " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
-					}
 
 			        if(debug3)
 			        {
                         //Info << "visitedNegZFaces = " << visitedNegZFaces << endl;
 			            //Info << "faceI + nInternalFaces = " << " " << faceI + nInternalFaces << endl;
-                        int patchCount = bMesh.whichPatch(faceI);
-			        	Info << "fvPatches[patchCount].nf() = " << fvPatches[patchCount].nf() << endl;//" " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
+                        //int patchCount = bMesh.whichPatch(faceI);
+			        	//Info << "fvPatches[patchCount].nf() = " << fvPatches[patchCount].nf() << endl;//" " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
 			        	//Info << "fvPatches[patchCount].nf()() = " << fvPatches[patchCount].nf()() << endl;//" " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
 			        	//Info << fvPatches[patchCount].nf()()[faceI][0] << " " <<fvPatches[patchCount].nf()()[faceI][1] << " "<< fvPatches[patchCount].nf()()[faceI][2] << endl;//" " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
 			        }
@@ -477,6 +525,10 @@ int main(int argc, char* argv[])
 			    //{
 			    //    Info << "patchIDs.size() = " << patchIDs.size() << endl;
 			    //}
+		    }
+			else
+			{
+			    ++sweptFaces;
 		    }
 			
         }
