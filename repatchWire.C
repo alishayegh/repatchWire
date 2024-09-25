@@ -74,7 +74,7 @@ class createPatch
         ):
         patchName_(s1),
         patchType_(s2),
-        patchID_(bMesh.patches().size()),
+        patchID_(bMesh.patches().size()), // Size before addPatch returns correct ID
         normal_(v)
         {
             bMesh.addPatch(patchName_);
@@ -466,6 +466,8 @@ int main(int argc, char* argv[])
 
 			        if(debug3)
 			        {
+						Info << "assigned to symmZ" << endl;
+					    Info << normal[0] << " " << normal[1] << " " << normal[2] << endl;
                         //Info << "visitedNegZFaces = " << visitedNegZFaces << endl;
 			            //Info << "faceI + nInternalFaces = " << " " << faceI + nInternalFaces << endl;
                         //int patchCount = bMesh.whichPatch(faceI);
@@ -474,6 +476,65 @@ int main(int argc, char* argv[])
 			        	//Info << fvPatches[patchCount].nf()()[faceI][0] << " " <<fvPatches[patchCount].nf()()[faceI][1] << " "<< fvPatches[patchCount].nf()()[faceI][2] << endl;//" " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
 			        }
 			    }
+
+		        else if(symmetryPlaneY1.normal_aligns(normal, tol))
+			    {
+	    	    	//visited[faceI] = true;
+			    	patchIDs[faceI + nInternalFaces] = symmetryPlaneY1.patchID();
+        
+        	    	if(debug)
+        	    	{
+			    	    //Info << "patchIDs[" << faceI + face0 << "] = " << patchIDs[ faceI + face0  ] << endl;
+			    		//Info << "visited[" << faceI << "] = " << visited[faceI] << endl;
+        	    	    //Info << "patchIDs[" << visitedFaces + faceI<< "] = " << newPatchID << endl;
+        	    	}
+
+
+			        if(debug3)
+			        {
+						Info << "assigned to symmY" << endl;
+					    Info << normal[0] << " " << normal[1] << " " << normal[2] << endl;
+                        //Info << "visitedNegZFaces = " << visitedNegZFaces << endl;
+			            //Info << "faceI + nInternalFaces = " << " " << faceI + nInternalFaces << endl;
+                        //int patchCount = bMesh.whichPatch(faceI);
+			        	//Info << "fvPatches[patchCount].nf() = " << fvPatches[patchCount].nf() << endl;//" " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
+			        	//Info << "fvPatches[patchCount].nf()() = " << fvPatches[patchCount].nf()() << endl;//" " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
+			        	//Info << fvPatches[patchCount].nf()()[faceI][0] << " " <<fvPatches[patchCount].nf()()[faceI][1] << " "<< fvPatches[patchCount].nf()()[faceI][2] << endl;//" " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
+			        }
+			    }
+
+		        else
+			    {
+					Info << "assigned to wireContact1" << endl;
+					Info << normal[0] << " " << normal[1] << " " << normal[2] << endl;
+
+	    	    	//visited[faceI] = true;
+			    	patchIDs[faceI + nInternalFaces] = wireContact1.patchID();
+        
+        	    	if(debug)
+        	    	{
+			    	    //Info << "patchIDs[" << faceI + face0 << "] = " << patchIDs[ faceI + face0  ] << endl;
+			    		//Info << "visited[" << faceI << "] = " << visited[faceI] << endl;
+        	    	    //Info << "patchIDs[" << visitedFaces + faceI<< "] = " << newPatchID << endl;
+        	    	}
+
+
+			        if(debug3)
+			        {
+                        //Info << "visitedNegZFaces = " << visitedNegZFaces << endl;
+			            //Info << "faceI + nInternalFaces = " << " " << faceI + nInternalFaces << endl;
+                        //int patchCount = bMesh.whichPatch(faceI);
+			        	//Info << "fvPatches[patchCount].nf() = " << fvPatches[patchCount].nf() << endl;//" " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
+			        	//Info << "fvPatches[patchCount].nf()() = " << fvPatches[patchCount].nf()() << endl;//" " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
+			        	//Info << fvPatches[patchCount].nf()()[faceI][0] << " " <<fvPatches[patchCount].nf()()[faceI][1] << " "<< fvPatches[patchCount].nf()()[faceI][2] << endl;//" " << N[faceI + nInternalFaces][1] << " " << N[faceI + nInternalFaces][2] << endl;
+			        }
+
+			    }
+			}
+			else
+			{
+			    ++sweptFaces;
+			}
 
 				/*
 
@@ -525,11 +586,6 @@ int main(int argc, char* argv[])
 			    //{
 			    //    Info << "patchIDs.size() = " << patchIDs.size() << endl;
 			    //}
-		    }
-			else
-			{
-			    ++sweptFaces;
-		    }
 			
         }
         //Info << "patchIDs.size() outside the loop = " << patchIDs.size() << endl;
