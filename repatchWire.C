@@ -74,9 +74,19 @@ class createPatch
         ):
         patchName_(s1),
         patchType_(s2),
-        patchID_(bMesh.patches().size()), // Size before addPatch returns correct ID
+        patchID_(-1), // Size before addPatch returns correct ID
+        //patchID_(bMesh.patches().size()), // Size before addPatch returns correct ID
         normal_(v)
         {
+			const PtrList<boundaryPatch>& bp = bMesh.patches();
+            forAll(bp, bpI)
+			{
+			    if(bp[bpI].name() == s1)
+				{
+				    patchID_ = bpI;
+					break;
+				}
+			}
             bMesh.addPatch(patchName_);
             bMesh.changePatchType(patchName_, patchType_);
         }
@@ -343,9 +353,9 @@ int main(int argc, char* argv[])
 	 */
 	Info << "patchIDs initialized" << endl;
 	    //- Add patchName for all faces facing positive Z direction
-		createPatch symmetryPlaneZ1(bMesh, word("symmetryPlaneZ1"), word("symmetryPlane"), vector(0, 0, -1));
-		createPatch symmetryPlaneY1(bMesh, word("symmetryPlaneY1"), word("symmetryPlane"), vector(0, -1, 0));
-		createPatch    wireContact1(bMesh, word("wireContact1"),    word("patch"));
+		createPatch symmetryPlaneZ1(bMesh, word("wireSymmetryZ"), word("symmetryPlane"), vector(0, 0, -1));
+		createPatch symmetryPlaneY1(bMesh, word("wireSymmetryY"), word("symmetryPlane"), vector(0, -1, 0));
+		createPatch    wireContact1(bMesh, word("wireContact"),    word("patch"));
 
         // Fill visited with all faces reachable from unsetFaceI.
 		/** Create \c boolList \c visited with the size of \c bMesh*/
@@ -477,6 +487,7 @@ int main(int argc, char* argv[])
 			        }
 			    }
 
+				
 		        else if(symmetryPlaneY1.normal_aligns(normal, tol))
 			    {
 	    	    	//visited[faceI] = true;
@@ -530,6 +541,7 @@ int main(int argc, char* argv[])
 			        }
 
 			    }
+				
 			}
 			else
 			{
